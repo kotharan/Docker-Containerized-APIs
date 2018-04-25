@@ -18,6 +18,7 @@ Next modify the API server to use a MySQL database to store the following resour
   * Businesses
   * Reviews
   * Photos
+
 The MySQL database should completely replace the existing JSON/in-memory storage for these resources.  In other words, all API endpoints associated with these resources should use the MySQL database.
 
 You should use the [official MySQL Docker image](https://hub.docker.com/_/mysql/) on Docker Hub to power your MySQL database.  Your MySQL setup should meet the following requirements:
