@@ -1,0 +1,13 @@
+version: '3'
+services:
+     yelp-api:
+          build: .
+     yelp-relay:
+          build:
+               context: .
+               dockerfile: Dockerfile-relay
+          environment:
+               RELAY_HOST: yelp-api
+               RELAY_PORT: 8000
+          ports:
+               - "8001:8001"
