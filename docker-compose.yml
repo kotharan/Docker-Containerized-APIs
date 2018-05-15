@@ -1,13 +1,50 @@
-version: '3'
+# version: '3'
+# services:
+#      yelp-api:
+#           build: .
+#      yelp-relay:
+#           build:
+#                context: .
+#                dockerfile: Dockerfile-relay
+#           environment:
+#                RELAY_HOST: yelp-api
+#                RELAY_PORT: 8000
+#           ports:
+#                - "8001:8001"
+
+      # db:
+      #     image: mysql
+      #     restart: always
+      #     environment:
+      #          MYSQL_ROOT_PASSWORD: aipee2Sheug4phie6kaL7ok5iepahhau
+
+version: '3.6'
 services:
-     yelp-api:
+     yelp:
           build: .
-     yelp-relay:
-          build:
-               context: .
-               dockerfile: Dockerfile-relay
-          environment:
-               RELAY_HOST: yelp-api
-               RELAY_PORT: 8000
+          image: yelp
+          restart: always
           ports:
-               - "8001:8001"
+               - "8000:8000"
+          environment:
+               MYSQL_DATABASE: yelpdb
+               MYSQL_USER: yelpuser
+               MYSQL_PASSWORD: hunter2
+               MYSQL_HOST: mysql-server
+               MYSQL_PORT: 3306
+
+     mysql-server:
+          image: mysql:5
+          restart: always
+          volumes:
+               - mysql-data:/var/lib/mysql
+               - ./yelp-db-init/:/docker-entrypoint-initdb.d
+          environment:
+               MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+               MYSQL_DATABASE: yelpdb
+               MYSQL_USER: yelpuser
+               MYSQL_PASSWORD: hunter2
+
+volumes:
+     mysql-data:
+          name: yelp-mysql-data

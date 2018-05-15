@@ -6,7 +6,6 @@ const api = require('./api');
 
 const app = express();
 const port = process.env.PORT || 8000;
-
 /*
  * Morgan is a popular logger.
  */
@@ -31,3 +30,52 @@ app.use('*', function (req, res, next) {
 app.listen(port, function() {
   console.log("== Server is running on port", port);
 });
+
+
+
+//---------------------------------------------------
+//
+// let p = new Promise((resolve, reject) => {
+//   doAsyncOperation((err, results) => {
+//     if (err) {
+//       reject(err);
+//     } else {
+//       resolve(results);
+//     }
+//   });
+// });
+//
+//
+// function waitAndPrint(message) {
+//   return new Promise((resolve, reject) => {
+//     setTimeout(() => {
+//       if (message === "Error") {
+//         reject(`We didn't like this string: "${message}"`);
+//       } else {
+//         console.log(message);
+//         resolve();
+//       }
+//     }, 1000);
+//   });
+// }
+//
+// waitAndPrint("Patience is a virtue").then(() => {
+//   console.log("... but I don't have the time.");
+// }).catch((err) => {
+//   console.log(`== Error: ${err}`);
+// });
+// waitAndPrint("Patience is a virtue", (err) => {
+//   if (err) {
+//     console.log(`== Error: ${err}`);
+//   } else {
+//     console.log("... but I don't have the time.");
+//   }
+// });
+//
+// waitAndPrint("3")
+//   .then(() => { return waitAndPrint("2"); })
+//   .then(() => { return waitAndPrint("1"); })
+//   .then(() => { return waitAndPrint("...Blastoff!"); })
+//   .catch((err) => { console.log(`== Error: ${err}`); });
+//
+//
