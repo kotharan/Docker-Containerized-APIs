@@ -1,5 +1,3 @@
 node_modules/
 Dockerfile-relay
-package-lock.json
-relay.js
 .env
