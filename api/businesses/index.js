@@ -21,7 +21,7 @@ const mysqlPool = mysql.createPool({
 });
 
 
-//--------------------------SQL----------------------------------
+//--------------------------SQL end----------------------------------
 
 let businesses = require('./businesses');
 const { reviews } = require('../reviews');
@@ -130,7 +130,7 @@ function getLodgingsCount() {
 /*
 * Route to create a new business.
 */
-
+//----------------------------------------------------------------------
  function insertNewLodging(businesses) {
   return new Promise((resolve, reject) => {
        const lodgingValues = {
@@ -188,31 +188,14 @@ function getLodgingsCount() {
 
 
      // -- end ----------------------------------------------------------------
+ });
+//----------------------------------------------------------------------
 
 
-
-
-  // if (validation.validateAgainstSchema(req.body, businessSchema)) {
-  //   let business = validation.extractValidFields(req.body, businessSchema);
-  //   business.id = businesses.length;
-  //   businesses.push(business);
-  //   res.status(201).json({
-  //     id: business.id,
-  //     links: {
-  //       business: `/businesses/${business.id}`
-  //     }
-  //   });
-  // } else {
-  //   res.status(400).json({
-  //     error: "Request body is not a valid business object"
-  //   });
-  // }
-     });
 
 /*
 * Route to fetch info about a specific business.
 */
-
  function getLodgingByID(businessID, callback) {
         return new Promise((resolve, reject) => {
              mysqlPool.query(
@@ -291,8 +274,12 @@ function updateLodgingByID(businessID, businesses) {
  if (req.body && req.body.ownerID && req.body.name && req.body.address  && req.body.city && req.body.state && req.body.zip && req.body.phone) {
      updateLodgingByID(businessID, req.body)
       .then((updateSuccessful) => {
-        if (updateSuccessful) {
-          res.status(200).json({});
+        if (updated) {
+          res.status(200).json({
+               links: {
+              business: `/businesses/${businessID}`
+            }
+          });
         } else {
           next();
         }
@@ -312,15 +299,43 @@ function updateLodgingByID(businessID, businesses) {
 /*
  * Route to delete a business.
  */
-router.delete('/:businessID', function (req, res, next) {
-  const businessID = parseInt(req.params.businessID);
-  if (businesses[businessID]) {
-    businesses[businessID] = null;
-    res.status(204).end();
-  } else {
-    next();
+//-----------------------------------------------------------------
+ function deleteLodgingByID(businessID, callback) {
+   return new Promise((resolve, reject) => {
+     mysqlPool.query(
+       'DELETE FROM businesses WHERE id = ?',
+       [ businessID ],
+       function (err, result) {
+         if (err) {
+           reject(err);
+         } else {
+           resolve(result.affectedRows > 0);
+         }
+       }
+     );
+   });
   }
-});
+
+
+  router.delete('/:businessID', function (req, res, next) {
+  const businessID = parseInt(req.params.businessID);
+  deleteLodgingByID(businessID)
+  .then((deleteSuccessful) => {
+    if (deleteSuccessful) {
+         console.log("DELETED THE SPECIFIED BUSINESS");
+      res.status(204).end();
+    } else {
+      next();
+    }
+  })
+  .catch((err) => {
+    res.status(500).json({
+      error: "Unable to delete business info."
+    });
+  });
+
+ });
+//-----------------------------------------------------------------
 
 // router.get('/help',function(req,res)
 // {

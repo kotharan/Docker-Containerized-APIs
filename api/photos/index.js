@@ -6,6 +6,31 @@ let photos = require('./photos');
 exports.router = router;
 exports.photos = photos;
 
+//-------------------------SQL-----------------------------
+const mysql = require('mysql');
+
+
+const mysqlHost = process.env.MYSQL_HOST;
+const mysqlPort = process.env.MYSQL_PORT || '3306';
+const mysqlDB = process.env.MYSQL_DATABASE;
+const mysqlUser = process.env.MYSQL_USER;
+const mysqlPassword = process.env.MYSQL_PASSWORD;
+
+const maxMySQLConnections = 10;
+const mysqlPool = mysql.createPool({
+  connectionLimit: maxMySQLConnections,
+  host: mysqlHost,
+  port: mysqlPort,
+  database: mysqlDB,
+  user: mysqlUser,
+  password: mysqlPassword
+});
+
+
+//--------------------------SQL end----------------------------------
+
+
+
 /*
  * Schema describing required/optional fields of a photo object.
  */
@@ -20,36 +45,103 @@ const photoSchema = {
 /*
  * Route to create a new photo.
  */
-router.post('/', function (req, res, next) {
-  if (validation.validateAgainstSchema(req.body, photoSchema)) {
-    let photo = validation.extractValidFields(req.body, photoSchema);
-    photo.id = photos.length;
-    photos.push(photo);
-    res.status(201).json({
-      id: photo.id,
-      links: {
-        photo: `/photos/${photo.id}`,
-        business: `/businesses/${photo.businessID}`
+
+ //----------------------------------------------------------------------
+  function insertNewPhotos(photos) {
+   return new Promise((resolve, reject) => {
+        const lodgingValues = {
+   id: null,
+   userID: photos.userID,
+   businessID: photos.businessID,
+   caption: photos.caption,
+   data: photos.data
+      };
+
+      mysqlPool.query(
+        'INSERT INTO photos SET ?',
+        lodgingValues,
+        function (err, result) {
+             if (err) {
+          reject(err);
+        } else {
+          resolve(result.insertId);
+        }
+
+        });
+
+       });
       }
-    });
-  } else {
-    res.status(400).json({
-      error: "Request body is not a valid photo object"
-    });
-  }
-});
+
+
+      router.post('/', function (req, res, next) {
+
+      //--docker endpont ---------------------------------------------
+
+      if (req.body && req.body.userID && req.body.businessID && req.body.data) {
+           insertNewPhotos(req.body)
+             .then((id) => {
+                  res.status(201).json({ id: id,
+                       links: {
+                     photos: '/photos/' + id
+                }});
+             })
+             .catch((err) => {
+                res.status(500).json({
+                error: "Error inserting photos into DB."
+           });
+       });
+      } else {
+        res.status(400).json({
+          error: "Request needs a JSON body with a businessID, etc."
+        });
+      }
+
+
+      // -- end ----------------------------------------------------------------
+  });
+//----------------------------------------------------------------------
 
 /*
  * Route to fetch info about a specific photo.
  */
-router.get('/:photoID', function (req, res, next) {
-  const photoID = parseInt(req.params.photoID);
-  if (photos[photoID]) {
-    res.status(200).json(photos[photoID]);
-  } else {
-    next();
-  }
-});
+ //------------------------------------------------------
+  function getphotoID(photoID, callback) {
+         return new Promise((resolve, reject) => {
+              mysqlPool.query(
+        'SELECT * FROM photos WHERE id = ?',
+        [ photoID ],
+        function (err, results) {
+          if (err) {
+            reject(null);
+          } else {
+            resolve(results[0]);
+          }
+        }
+      );
+
+         });
+       }
+
+
+      router.get('/:photoID', function (req, res, next) {
+        const photoID = parseInt(req.params.photoID);
+        getphotoID(photoID)
+        .then((lodging) => {
+           if (lodging) {
+             res.status(200).json(lodging);
+           } else {
+             next();
+           }
+
+       })
+        .catch((err) => {
+             res.status(500).json({
+   error: "Unable to fetch photos."
+      });
+        });
+      });
+ //--------------------------------------------------
+
 
 /*
  * Route to update a photo.
@@ -93,12 +185,41 @@ router.put('/:photoID', function (req, res, next) {
 /*
  * Route to delete a photo.
  */
-router.delete('/:photoID', function (req, res, next) {
-  const photoID = parseInt(req.params.photoID);
-  if (photos[photoID]) {
-    photos[photoID] = null;
-    res.status(204).end();
-  } else {
-    next();
-  }
-});
+
+ //-----------------------------------------------------------------
+  function deletePhotoByID(photoID, callback) {
+    return new Promise((resolve, reject) => {
+      mysqlPool.query(
+        'DELETE FROM photos WHERE id = ?',
+        [ photoID ],
+        function (err, result) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result.affectedRows > 0);
+          }
+        }
+      );
+    });
+   }
+
+
+   router.delete('/:photoID', function (req, res, next) {
+   const photoID = parseInt(req.params.photoID);
+   deletePhotoByID(photoID)
+   .then((deleteSuccessful) => {
+     if (deleteSuccessful) {
+          console.log("DELETED THE SPECIFIED Photo");
+       res.status(204).end();
+     } else {
+       next();
+     }
+   })
+   .catch((err) => {
+     res.status(500).json({
+       error: "Unable to delete photo info."
+     });
+   });
+
+  });
+ //-----------------------------------------------------------------

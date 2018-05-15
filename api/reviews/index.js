@@ -59,14 +59,54 @@ router.post('/', function (req, res, next) {
 /*
  * Route to fetch info about a specific review.
  */
-router.get('/:reviewID', function (req, res, next) {
-  const reviewID = parseInt(req.params.reviewID);
-  if (reviews[reviewID]) {
-    res.status(200).json(reviews[reviewID]);
-  } else {
-    next();
-  }
-});
+//--------------------------------------------------
+ function getreviewID(reviewID, callback) {
+        return new Promise((resolve, reject) => {
+            mysqlPool.query(
+       'SELECT * FROM reviews WHERE id = ?',
+       [ reviewID ],
+       function (err, results) {
+         if (err) {
+          reject(null);
+         } else {
+          resolve(results[0]);
+         }
+       }
+     );
+
+        });
+      }
+
+
+     router.get('/:reviewID', function (req, res, next) {
+       const reviewID = parseInt(req.params.reviewID);
+       getreviewID(reviewID)
+       .then((lodging) => {
+          if (lodging) {
+            res.status(200).json(lodging);
+          } else {
+            next();
+          }
+
+      })
+       .catch((err) => {
+            res.status(500).json({
+  error: "Unable to fetch reviews."
+     });
+       });
+     });
+//--------------------------------------------------
+
+
+//
+// router.get('/:reviewID', function (req, res, next) {
+//   const reviewID = parseInt(req.params.reviewID);
+//   if (reviews[reviewID]) {
+//     res.status(200).json(reviews[reviewID]);
+//   } else {
+//     next();
+//   }
+// });
 
 /*
  * Route to update a review.
