@@ -238,45 +238,6 @@ function updatedReview(reviewID, businesses) {
  });
 //-----------------------------------------------------------------
 
-
-
-//
-// router.put('/:reviewID', function (req, res, next) {
-//   const reviewID = parseInt(req.params.reviewID);
-//   if (reviews[reviewID]) {
-//
-//     if (validation.validateAgainstSchema(req.body, reviewSchema)) {
-//       /*
-//        * Make sure the updated review has the same businessID and userID as
-//        * the existing review.
-//        */
-//       let updatedReview = validation.extractValidFields(req.body, reviewSchema);
-//       let existingReview = reviews[reviewID];
-//       if (updatedReview.businessID === existingReview.businessID && updatedReview.userID === existingReview.userID) {
-//         reviews[reviewID] = updatedReview;
-//         reviews[reviewID].id = reviewID;
-//         res.status(200).json({
-//           links: {
-//             review: `/reviews/${reviewID}`,
-//             business: `/businesses/${updatedReview.businessID}`
-//           }
-//         });
-//       } else {
-//         res.status(403).json({
-//           error: "Updated review must have the same businessID and userID"
-//         });
-//       }
-//     } else {
-//       res.status(400).json({
-//         error: "Request body is not a valid review object"
-//       });
-//     }
-//
-//   } else {
-//     next();
-//   }
-// });
-
 /*
 * Route to delete a review.
 */
