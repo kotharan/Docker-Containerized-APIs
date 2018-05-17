@@ -1,8 +1,5 @@
 # Assignment 2
 
-**Assignment due at 11:59pm on Monday 5/7/2018**
-
-**Demo due by 11:59pm on Monday 5/21/2018**
 
 The goals of this assignment are to start to use a MySQL database to store application data and to start using Docker to power our application.  There are a few parts to this assignment, as described below.
 
