@@ -45,7 +45,7 @@ CREATE TABLE `businesses` (
 
 LOCK TABLES `businesses` WRITE;
 /*!40000 ALTER TABLE `businesses` DISABLE KEYS */;
-INSERT INTO `businesses` VALUES (1,'MyBusiness','7200 NW GrandviewDr.','Corvallis','OR','97330',54190555,'Restaurant','Brewpub','http://block15.com','2'),(2,'yourBusiness','70 NW view Dr.','Corv.','OR','9330',5419055,'Bar','Alcohol','http://bl.com','1'),(3,'wowBusiness','70 NW view Dr.','Corv.','OR','9330',5419055,'Nine','Shop','http://bl.com','5'),(4,'HMMMBusiness','70 NW view Dr.','Corv.','OR','9330',5419055,'Nine','Shopingnaa','http://bl.com','5'),(5,'MyBusiness','7200 NW GrandviewDr.','Corvallis','OR','97330',54190555,'Restaurant','Brewpub','http://block15.com','2');
+INSERT INTO `businesses` VALUES (1,'MyBusiness','7200 NW GrandviewDr.','Corvallis','OR','97330',54190555,'Restaurant','Brewpub','http://block15.com','2'),(2,'NONO','0 NW view Dr.','Corv.','OR','9330',5419055,'Nine','Shopingnaa','http://bl.com','2'),(3,'anan','0 NW view Dr.','Corv.','OR','9330',5419055,'Nine','Shopingnaa','http://bl.com','2'),(4,'HMMMBusiness','70 NW view Dr.','Corv.','OR','9330',5419055,'Nine','Shopingnaa','http://bl.com','5'),(5,'MyBusiness','7200 NW GrandviewDr.','Corvallis','OR','97330',54190555,'Restaurant','Brewpub','http://block15.com','2');
 /*!40000 ALTER TABLE `businesses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -65,7 +65,7 @@ CREATE TABLE `photos` (
   PRIMARY KEY (`id`),
   KEY `idx_userID` (`userID`),
   KEY `idx_businessID` (`businessID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +74,7 @@ CREATE TABLE `photos` (
 
 LOCK TABLES `photos` WRITE;
 /*!40000 ALTER TABLE `photos` DISABLE KEYS */;
-INSERT INTO `photos` VALUES (1,'3','7','That palce is awesome','OR is the location'),(2,'5','2','Just awesome','Nono Dont go');
+INSERT INTO `photos` VALUES (1,'3','7','That palce is awesome','OR is the location'),(2,'3','8','The awesomeness','location: OR'),(3,'6','7','Thats Sooooo GOood','OR is the location'),(4,'6','7','Thats NOT Sooooo GOood','OR is the location');
 /*!40000 ALTER TABLE `photos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -95,7 +95,7 @@ CREATE TABLE `reviews` (
   PRIMARY KEY (`id`),
   KEY `idx_userID` (`userID`),
   KEY `idx_businessID` (`businessID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,6 +104,7 @@ CREATE TABLE `reviews` (
 
 LOCK TABLES `reviews` WRITE;
 /*!40000 ALTER TABLE `reviews` DISABLE KEYS */;
+INSERT INTO `reviews` VALUES (1,'5','2','2',3.0,'place is not so got but OK'),(2,'2','6','1',5.0,' not so got but still ill give 5'),(3,'6','3','1',5.0,' still ill give 5'),(4,'6','3','1',5.0,' still ill give 5'),(5,'6','8','1',1.0,' give 5'),(6,'8','2','1',4.0,' YEs No Yes 5'),(7,'8','2','1',4.0,' Yeahhhhh'),(8,'8','2','1',4.0,' YEs No Yes 5');
 /*!40000 ALTER TABLE `reviews` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -116,4 +117,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-15  5:26:09
+-- Dump completed on 2018-05-17  1:04:16

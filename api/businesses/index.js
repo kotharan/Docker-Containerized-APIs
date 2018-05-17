@@ -236,11 +236,11 @@ function getLodgingsCount() {
 /*
  * Route to replace data for a business.
  */
-
+//-----------------------------------------------------------------
 function updateLodgingByID(businessID, businesses) {
    return new Promise((resolve, reject) => {
         const lodgingValues = {
-        id: null,
+        id: businesses.id,
         name: businesses.name,
         address: businesses.address,
         city: businesses.city,
@@ -274,10 +274,10 @@ function updateLodgingByID(businessID, businesses) {
  if (req.body && req.body.ownerID && req.body.name && req.body.address  && req.body.city && req.body.state && req.body.zip && req.body.phone) {
      updateLodgingByID(businessID, req.body)
       .then((updateSuccessful) => {
-        if (updated) {
+        if (updateSuccessful) {
           res.status(200).json({
                links: {
-              business: `/businesses/${businessID}`
+              businesses: `/businesses/${businessID}`
             }
           });
         } else {
@@ -285,6 +285,7 @@ function updateLodgingByID(businessID, businesses) {
         }
       })
       .catch((err) => {
+           console.error(err);
         res.status(500).json({
           error: "Unable to update business."
         });
@@ -295,6 +296,8 @@ function updateLodgingByID(businessID, businesses) {
     });
   }
  });
+//-----------------------------------------------------------------
+
 
 /*
  * Route to delete a business.
