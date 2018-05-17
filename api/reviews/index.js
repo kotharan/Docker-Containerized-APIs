@@ -6,9 +6,33 @@ let reviews = require('./reviews');
 exports.router = router;
 exports.reviews = reviews;
 
+//-------------------------SQL-----------------------------
+const mysql = require('mysql');
+
+
+const mysqlHost = process.env.MYSQL_HOST;
+const mysqlPort = process.env.MYSQL_PORT || '3306';
+const mysqlDB = process.env.MYSQL_DATABASE;
+const mysqlUser = process.env.MYSQL_USER;
+const mysqlPassword = process.env.MYSQL_PASSWORD;
+
+const maxMySQLConnections = 10;
+const mysqlPool = mysql.createPool({
+  connectionLimit: maxMySQLConnections,
+  host: mysqlHost,
+  port: mysqlPort,
+  database: mysqlDB,
+  user: mysqlUser,
+  password: mysqlPassword
+});
+
+
+//--------------------------SQL end----------------------------------
+
+
 /*
- * Schema describing required/optional fields of a review object.
- */
+* Schema describing required/optional fields of a review object.
+*/
 const reviewSchema = {
   userID: { required: true },
   businessID: { required: true },
@@ -19,46 +43,103 @@ const reviewSchema = {
 
 
 /*
- * Route to create a new review.
- */
-router.post('/', function (req, res, next) {
-  if (validation.validateAgainstSchema(req.body, reviewSchema)) {
+* Route to create a new review.
+*/
+//----------------------------------------------------------------------
+ function insertNewReviews(reviews) {
+      return new Promise((resolve, reject) => {
+            const lodgingValues = {
+      id: null,
+      userID: reviews.userID,
+      businessID: reviews.businessID,
+      dollars: reviews.dollars,
+      stars: reviews.stars,
+      review: reviews.review
+         };
 
-    let review = validation.extractValidFields(req.body, reviewSchema);
+         mysqlPool.query(
+            'INSERT INTO reviews SET ?',
+            lodgingValues,
+            function (err, result) {
+                 if (err) {
+              reject(err);
+            } else {
+              resolve(result.insertId);
+            }
 
-    /*
-     * Make sure the user is not trying to review the same business twice.
-     */
-    let userReviewedThisBusinessAlready = reviews.some(
-      existingReview => existingReview.ownerID === review.ownerID && existingReview.businessID === review.businessID
-    );
+            });
 
-    if (userReviewedThisBusinessAlready) {
-      res.status(403).json({
-        error: "User has already posted a review of this business"
-      });
+          });
+         }
+
+
+    router.post('/', function (req, res, next) {
+
+    //--docker endpont ---------------------------------------------
+
+    if (req.body && req.body.userID && req.body.businessID && req.body.dollars && req.body.stars) {
+          insertNewReviews(req.body)
+            .then((id) => {
+                 res.status(201).json({ id: id,
+                     links: {
+                    reviews: '/reviews/' + id
+               }});
+            })
+            .catch((err) => {
+               res.status(500).json({
+               error: "Error inserting reviews into DB."
+          });
+     });
     } else {
-      review.id = reviews.length;
-      reviews.push(review);
-      res.status(201).json({
-        id: review.id,
-        links: {
-          review: `/reviews/${review.id}`,
-          business: `/businesses/${review.businessID}`
-        }
-      });
+       res.status(400).json({
+         error: "Request needs a JSON body with a businessID,stars,dollars etc."
+       });
     }
 
-  } else {
-    res.status(400).json({
-      error: "Request body is not a valid review object"
-    });
-  }
-});
+
+    // -- end ----------------------------------------------------------------
+  });
+
+  // For validation if the inputted data is valid
+     router.post('/', function (req, res, next) {
+       if (validation.validateAgainstSchema(req.body, reviewSchema)) {
+
+         let review = validation.extractValidFields(req.body, reviewSchema);
+
+         /*
+          * Make sure the user is not trying to review the same business twice.
+          */
+         let userReviewedThisBusinessAlready = reviews.some(
+           existingReview => existingReview.ownerID === review.ownerID && existingReview.businessID === review.businessID
+         );
+
+         if (userReviewedThisBusinessAlready) {
+           res.status(403).json({
+             error: "User has already posted a review of this business"
+           });
+         } else {
+           review.id = reviews.length;
+           reviews.push(review);
+           res.status(201).json({
+             id: review.id,
+             links: {
+               review: `/reviews/${review.id}`,
+               business: `/businesses/${review.businessID}`
+             }
+           });
+         }
+
+       } else {
+         res.status(400).json({
+           error: "Request body is not a valid review object"
+         });
+       }
+     });
+//----------------------------------------------------------------------
 
 /*
- * Route to fetch info about a specific review.
- */
+* Route to fetch info about a specific review.
+*/
 //--------------------------------------------------
  function getreviewID(reviewID, callback) {
         return new Promise((resolve, reject) => {
@@ -77,8 +158,7 @@ router.post('/', function (req, res, next) {
         });
       }
 
-
-     router.get('/:reviewID', function (req, res, next) {
+      router.get('/:reviewID', function (req, res, next) {
        const reviewID = parseInt(req.params.reviewID);
        getreviewID(reviewID)
        .then((lodging) => {
@@ -97,65 +177,143 @@ router.post('/', function (req, res, next) {
      });
 //--------------------------------------------------
 
+/*
+* Route to update a review.
+*/
+//-----------------------------------------------------------------
+function updatedReview(reviewID, businesses) {
+   return new Promise((resolve, reject) => {
+        const lodgingValues = {
+             id: businesses.id,
+        userID: businesses.userID,
+        businessID: businesses.businessID,
+        dollars: businesses.dollars,
+        stars: businesses.stars,
+        review: businesses.review
+          };
+
+     mysqlPool.query(
+       'UPDATE reviews SET ? WHERE id = ?',
+       [ lodgingValues, reviewID ],
+       function (err, result) {
+         if (err) {
+          reject(err);
+         } else {
+          resolve(result.affectedRows > 0);
+         }
+       }
+     );
+   });
+ }
+
+
+ router.put('/:reviewID', function (req, res, next) {
+ const reviewID = parseInt(req.params.reviewID);
+
+ if (req.body && req.body.userID && req.body.businessID  && req.body.dollars && req.body.stars ) {
+     updatedReview(reviewID, req.body)
+      .then((updateSuccessful) => {
+        if (updateSuccessful) {
+          res.status(200).json({
+               links: {
+              reviews: `/reviews/${reviewID}`
+            }
+          });
+        } else {
+          next();
+        }
+      })
+      .catch((err) => {
+          console.error(err);
+        res.status(500).json({
+          error: "Unable to update reviews."
+        });
+      });
+ } else {
+      console.log(err);
+    res.status(400).json({
+      err: "Request needs a JSON body with a userID,businessID, etc."
+    });
+ }
+ });
+//-----------------------------------------------------------------
+
+
 
 //
-// router.get('/:reviewID', function (req, res, next) {
+// router.put('/:reviewID', function (req, res, next) {
 //   const reviewID = parseInt(req.params.reviewID);
 //   if (reviews[reviewID]) {
-//     res.status(200).json(reviews[reviewID]);
+//
+//     if (validation.validateAgainstSchema(req.body, reviewSchema)) {
+//       /*
+//        * Make sure the updated review has the same businessID and userID as
+//        * the existing review.
+//        */
+//       let updatedReview = validation.extractValidFields(req.body, reviewSchema);
+//       let existingReview = reviews[reviewID];
+//       if (updatedReview.businessID === existingReview.businessID && updatedReview.userID === existingReview.userID) {
+//         reviews[reviewID] = updatedReview;
+//         reviews[reviewID].id = reviewID;
+//         res.status(200).json({
+//           links: {
+//             review: `/reviews/${reviewID}`,
+//             business: `/businesses/${updatedReview.businessID}`
+//           }
+//         });
+//       } else {
+//         res.status(403).json({
+//           error: "Updated review must have the same businessID and userID"
+//         });
+//       }
+//     } else {
+//       res.status(400).json({
+//         error: "Request body is not a valid review object"
+//       });
+//     }
+//
 //   } else {
 //     next();
 //   }
 // });
 
 /*
- * Route to update a review.
- */
-router.put('/:reviewID', function (req, res, next) {
-  const reviewID = parseInt(req.params.reviewID);
-  if (reviews[reviewID]) {
-
-    if (validation.validateAgainstSchema(req.body, reviewSchema)) {
-      /*
-       * Make sure the updated review has the same businessID and userID as
-       * the existing review.
-       */
-      let updatedReview = validation.extractValidFields(req.body, reviewSchema);
-      let existingReview = reviews[reviewID];
-      if (updatedReview.businessID === existingReview.businessID && updatedReview.userID === existingReview.userID) {
-        reviews[reviewID] = updatedReview;
-        reviews[reviewID].id = reviewID;
-        res.status(200).json({
-          links: {
-            review: `/reviews/${reviewID}`,
-            business: `/businesses/${updatedReview.businessID}`
+* Route to delete a review.
+*/
+//-----------------------------------------------------------------
+function deletereviewID(reviewID, callback) {
+    return new Promise((resolve, reject) => {
+      mysqlPool.query(
+        'DELETE FROM reviews WHERE id = ?',
+        [ reviewID ],
+        function (err, result) {
+          if (err) {
+           reject(err);
+          } else {
+           resolve(result.affectedRows > 0);
           }
-        });
-      } else {
-        res.status(403).json({
-          error: "Updated review must have the same businessID and userID"
-        });
-      }
-    } else {
-      res.status(400).json({
-        error: "Request body is not a valid review object"
-      });
-    }
+        }
+      );
+    });
+   }
 
-  } else {
-    next();
-  }
-});
 
-/*
- * Route to delete a review.
- */
-router.delete('/:reviewID', function (req, res, next) {
-  const reviewID = parseInt(req.params.reviewID);
-  if (reviews[reviewID]) {
-    reviews[reviewID] = null;
-    res.status(204).end();
-  } else {
-    next();
-  }
-});
+   router.delete('/:reviewID', function (req, res, next) {
+   const reviewID = parseInt(req.params.reviewID);
+   deletereviewID(reviewID)
+   .then((deleteSuccessful) => {
+     if (deleteSuccessful) {
+          console.log("DELETED THE SPECIFIED REVIEW");
+       res.status(204).end();
+     } else {
+       next();
+     }
+  })
+  .catch((err) => {
+     res.status(500).json({
+       error: "Unable to delete review info."
+     });
+  });
+
+  });
+//-----------------------------------------------------------------

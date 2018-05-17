@@ -10,23 +10,21 @@ exports.photos = photos;
 const mysql = require('mysql');
 
 
-const mysqlHost = process.env.MYSQL_HOST;
-const mysqlPort = process.env.MYSQL_PORT || '3306';
-const mysqlDB = process.env.MYSQL_DATABASE;
-const mysqlUser = process.env.MYSQL_USER;
-const mysqlPassword = process.env.MYSQL_PASSWORD;
+     const mysqlHost = process.env.MYSQL_HOST;
+     const mysqlPort = process.env.MYSQL_PORT || '3306';
+     const mysqlDB = process.env.MYSQL_DATABASE;
+     const mysqlUser = process.env.MYSQL_USER;
+     const mysqlPassword = process.env.MYSQL_PASSWORD;
 
-const maxMySQLConnections = 10;
-const mysqlPool = mysql.createPool({
-  connectionLimit: maxMySQLConnections,
-  host: mysqlHost,
-  port: mysqlPort,
-  database: mysqlDB,
-  user: mysqlUser,
-  password: mysqlPassword
-});
-
-
+     const maxMySQLConnections = 10;
+     const mysqlPool = mysql.createPool({
+     connectionLimit: maxMySQLConnections,
+     host: mysqlHost,
+     port: mysqlPort,
+     database: mysqlDB,
+     user: mysqlUser,
+     password: mysqlPassword
+     });
 //--------------------------SQL end----------------------------------
 
 
@@ -146,46 +144,66 @@ const photoSchema = {
 /*
  * Route to update a photo.
  */
-router.put('/:photoID', function (req, res, next) {
-  const photoID = parseInt(req.params.photoID);
-  if (photos[photoID]) {
+ //-----------------------------------------------------------------
+ function updatePhotos(photoID, businesses) {
+    return new Promise((resolve, reject) => {
+         const lodgingValues = {
+              id:businesses.id,
+         userID: businesses.userID,
+         businessID: businesses.businessID,
+         caption: businesses.caption,
+         data: businesses.data
+            };
 
-    if (validation.validateAgainstSchema(req.body, photoSchema)) {
-      /*
-       * Make sure the updated photo has the same businessID and userID as
-       * the existing photo.
-       */
-      let updatedPhoto = validation.extractValidFields(req.body, photoSchema);
-      let existingPhoto = photos[photoID];
-      if (updatedPhoto.businessID === existingPhoto.businessID && updatedPhoto.userID === existingPhoto.userID) {
-        photos[photoID] = updatedPhoto;
-        photos[photoID].id = photoID;
-        res.status(200).json({
-          links: {
-            photo: `/photos/${photoID}`,
-            business: `/businesses/${updatedPhoto.businessID}`
+      mysqlPool.query(
+        'UPDATE photos SET ? WHERE id = ?',
+        [ lodgingValues, photoID ],
+        function (err, result) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result.affectedRows > 0);
           }
-        });
-      } else {
-        res.status(403).json({
-          error: "Updated photo must have the same businessID and userID"
-        });
-      }
-    } else {
-      res.status(400).json({
-        error: "Request body is not a valid photo object"
-      });
-    }
-
-  } else {
-    next();
+        }
+      );
+    });
   }
-});
+
+
+  router.put('/:photoID', function (req, res, next) {
+   const photoID = parseInt(req.params.photoID);
+
+  if (req.body && req.body.userID && req.body.businessID && req.body.data) {
+      updatePhotos(photoID, req.body)
+       .then((updateSuccessful) => {
+         if (updateSuccessful) {
+           res.status(200).json({
+                links: {
+               photos: `/photos/${photoID}`
+             }
+           });
+         } else {
+           next();
+         }
+       })
+       .catch((err) => {
+            console.error(err);
+         res.status(500).json({
+           error: "Unable to update photos."
+         });
+       });
+   } else {
+     res.status(400).json({
+       err: "Request needs a JSON body with a userID,businessID, etc."
+     });
+   }
+  });
+ //-----------------------------------------------------------------
+
 
 /*
  * Route to delete a photo.
  */
-
  //-----------------------------------------------------------------
   function deletePhotoByID(photoID, callback) {
     return new Promise((resolve, reject) => {
